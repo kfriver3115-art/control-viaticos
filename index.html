@@ -1,63 +1,878 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Control de Viáticos</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#243b8a" />
+  <meta name="description" content="Control de Viáticos Pro: saldo personal, viajes, gastos, reembolsos y reportes." />
+  <title>Control de Viáticos Pro</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <style>
+    :root{
+      --bg:#f5f7fb; --card:#ffffff; --text:#162033; --muted:#6b7280;
+      --primary:#243b8a; --primary-2:#1b2d6b; --danger:#d93025;
+      --success:#0f9d58; --warning:#f59e0b; --border:#e5e7eb;
+      --shadow:0 10px 30px rgba(14,30,62,.08); --radius:20px;
+    }
+    *{box-sizing:border-box} html{scroll-behavior:smooth}
+    body{margin:0;font-family:Inter,Arial,sans-serif;background:linear-gradient(180deg,#eef2ff 0%,var(--bg) 220px);color:var(--text)}
+    .app{max-width:1220px;margin:0 auto;padding:20px 16px 120px}
+    .topbar{background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;border-radius:28px;padding:22px 20px;box-shadow:var(--shadow);display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .topbar h1{margin:0;font-size:1.7rem}.topbar p{margin:6px 0 0;opacity:.9}
+    .actions,.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    button,select,input,textarea{font:inherit}
+    .btn{border:none;border-radius:14px;padding:12px 16px;cursor:pointer;font-weight:700;transition:.2s ease}
+    .btn:hover{transform:translateY(-1px)}
+    .btn-primary{background:#fff;color:var(--primary)}
+    .btn-dark{background:var(--primary);color:#fff}
+    .btn-light{background:#eef2ff;color:var(--primary)}
+    .btn-danger{background:#fee2e2;color:var(--danger)}
+    .btn-success{background:#dcfce7;color:#166534}
+    .grid{display:grid;gap:16px;margin-top:18px}
+    .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.7);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+    .stat-title{color:var(--muted);font-size:.95rem;margin-bottom:8px}
+    .stat-value{font-size:1.8rem;font-weight:800;line-height:1.1}
+    .stat-sub{margin-top:6px;color:var(--muted);font-size:.92rem}
+    .section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:8px 0 10px}
+    .section-head h2,.section-head h3{margin:0}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;position:sticky;top:0;z-index:5;padding-top:8px;background:linear-gradient(180deg,rgba(245,247,251,.95),rgba(245,247,251,.75));backdrop-filter:blur(8px)}
+    .tab{border:1px solid var(--border);background:#fff;color:var(--muted);padding:10px 14px;border-radius:999px;cursor:pointer;font-weight:700}
+    .tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .view{display:none}.view.active{display:block}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field label{color:var(--muted);font-size:.92rem;font-weight:700}
+    input,select,textarea{width:100%;border:1px solid var(--border);background:#fafafa;border-radius:14px;padding:12px 13px;outline:none}
+    textarea{min-height:96px;resize:vertical}.span-2{grid-column:span 2}
+    .list{display:flex;flex-direction:column;gap:12px}
+    .item{background:#fbfcff;border:1px solid #edf1f7;border-radius:18px;padding:14px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start}
+    .item h4{margin:0 0 5px}.meta,.empty,.hint{color:var(--muted);font-size:.92rem}
+    .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 10px;font-size:.83rem;font-weight:700}
+    .pill.personal,.pill.ajuste{background:#ede9fe;color:#5b21b6}
+    .pill.empresa{background:#dbeafe;color:#1d4ed8}
+    .pill.reembolso{background:#dcfce7;color:#166534}
+    .pill.activo{background:#dbeafe;color:#1d4ed8}
+    .pill.pendiente{background:#fef3c7;color:#92400e}
+    .pill.cerrado{background:#e5e7eb;color:#374151}
+    .price{font-size:1.2rem;font-weight:800;white-space:nowrap}
+    .toolbar select,.toolbar input{width:auto;min-width:180px}
+    .hidden{display:none!important}
+    .install-tip{margin-top:12px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.14);font-size:.92rem;display:none}
+    .thumb{width:82px;height:82px;object-fit:cover;border-radius:12px;border:1px solid var(--border);background:#fff}
+    .thumb-lg{width:120px;height:120px}
+    .preview-box{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .kpi-note{font-size:.86rem;color:var(--muted);margin-top:8px}
+    .footer-space{height:28px}
+    @media (max-width: 920px){.grid-4,.grid-3,.grid-2,.form-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width: 640px){
+      .grid-4,.grid-3,.grid-2,.form-grid{grid-template-columns:1fr}
+      .span-2{grid-column:span 1}.item{grid-template-columns:1fr}
+      .price{white-space:normal}.toolbar select,.toolbar input{width:100%}.tabs{top:0}
+    }
+  </style>
 </head>
 <body>
+  <div class="app">
+    <section class="topbar">
+      <div>
+        <h1>💼 Control de Viáticos Pro</h1>
+        <p>Controla tu saldo real, tus gastos personales, viáticos, reembolsos y comprobantes.</p>
+        <div id="installTip" class="install-tip"></div>
+      </div>
+      <div class="actions">
+        <button id="installBtn" class="btn btn-primary hidden">Instalar app</button>
+        <button class="btn btn-primary" onclick="exportarJSON()">Exportar respaldo</button>
+        <label class="btn btn-light" for="importFile">Importar respaldo</label>
+        <input id="importFile" type="file" accept="application/json" class="hidden" />
+        <button class="btn btn-dark" onclick="reiniciarTodo()">Reiniciar app</button>
+      </div>
+    </section>
 
-<header>
-  <h1>💼 Control de Viáticos</h1>
-</header>
+    <div class="tabs" id="tabs"></div>
 
-<main>
+    <section id="dashboardView" class="view active">
+      <div class="grid grid-4" id="statsGrid"></div>
 
-  <!-- DASHBOARD -->
-  <section id="dashboard">
-    <div class="card">
-      <h3>Saldo Actual</h3>
-      <p id="saldo">S/ 0</p>
-    </div>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="section-head"><h2>Configurar mi dinero</h2></div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="saldoBase">Monto base / dinero inicial</label>
+              <input id="saldoBase" type="number" step="0.01" placeholder="Ej. 2500" />
+            </div>
+            <div class="field">
+              <label for="saldoObjetivo">Monto objetivo normal</label>
+              <input id="saldoObjetivo" type="number" step="0.01" placeholder="Ej. 2500" />
+            </div>
+            <div class="field span-2">
+              <label for="ajusteDescripcion">Ajuste manual del saldo actual</label>
+              <div class="toolbar">
+                <input id="ajusteMonto" type="number" step="0.01" placeholder="Ej. 100 o -50" />
+                <input id="ajusteDescripcion" type="text" placeholder="Descripción del ajuste" />
+                <button class="btn btn-dark" onclick="guardarConfiguracion()">Guardar config</button>
+                <button class="btn btn-light" onclick="agregarAjuste()">Aplicar ajuste</button>
+              </div>
+            </div>
+          </div>
+        </div>
 
-    <div class="card">
-      <h3>Pendiente Empresa</h3>
-      <p id="pendiente">S/ 0</p>
-    </div>
-  </section>
+        <div class="card">
+          <div class="section-head"><h2>Resumen rápido</h2></div>
+          <div id="resumenRapido" class="list"></div>
+        </div>
+      </div>
+    </section>
 
-  <!-- CONFIG SALDO -->
-  <section>
-    <h2>Mi dinero</h2>
-    <input type="number" id="saldoInicial" placeholder="Saldo inicial">
-    <button onclick="guardarSaldo()">Guardar</button>
-  </section>
+    <section id="movimientosView" class="view">
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="section-head">
+            <h2 id="movFormTitle">Registrar movimiento</h2>
+            <button id="cancelEditBtn" class="btn btn-light hidden" onclick="cancelarEdicion()">Cancelar edición</button>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="movTipo">Tipo</label>
+              <select id="movTipo" onchange="actualizarViajeEnFormulario(); actualizarCategorias();">
+                <option value="personal">Gasto personal</option>
+                <option value="empresa">Gasto de empresa</option>
+                <option value="reembolso">Reembolso recibido</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="movFecha">Fecha</label>
+              <input id="movFecha" type="date" />
+            </div>
+            <div class="field">
+              <label for="movMonto">Monto</label>
+              <input id="movMonto" type="number" step="0.01" placeholder="Ej. 45.50" />
+            </div>
+            <div class="field">
+              <label for="movCategoria">Categoría</label>
+              <select id="movCategoria"></select>
+            </div>
+            <div class="field span-2" id="viajeField">
+              <label for="movViaje">Viaje relacionado</label>
+              <select id="movViaje"></select>
+            </div>
+            <div class="field span-2">
+              <label for="movDescripcion">Descripción</label>
+              <input id="movDescripcion" type="text" placeholder="Ej. Taxi aeropuerto / Almuerzo / Depósito empresa" />
+            </div>
+            <div class="field span-2">
+              <label for="movNota">Observación</label>
+              <textarea id="movNota" placeholder="Notas opcionales"></textarea>
+            </div>
+            <div class="field span-2">
+              <label for="movComprobante">Comprobante (foto opcional)</label>
+              <input id="movComprobante" type="file" accept="image/*" capture="environment" />
+              <div class="hint">La imagen se comprime antes de guardarse. Aun así, evita subir demasiadas fotos muy grandes en el mismo navegador.</div>
+              <div id="comprobantePreview" class="preview-box hidden"></div>
+            </div>
+            <div class="field span-2">
+              <button id="saveMovBtn" class="btn btn-dark" onclick="guardarMovimiento()">Guardar movimiento</button>
+            </div>
+          </div>
+        </div>
 
-  <!-- GASTO -->
-  <section>
-    <h2>Agregar movimiento</h2>
+        <div class="card">
+          <div class="section-head">
+            <h2>Historial general</h2>
+            <div class="toolbar">
+              <select id="filtroTipo" onchange="renderMovimientos()">
+                <option value="todos">Todos</option>
+                <option value="personal">Solo personales</option>
+                <option value="empresa">Solo empresa</option>
+                <option value="reembolso">Solo reembolsos</option>
+                <option value="ajuste">Solo ajustes</option>
+              </select>
+              <input id="filtroBusqueda" type="text" placeholder="Buscar descripción" oninput="renderMovimientos()" />
+            </div>
+          </div>
+          <div id="movimientosList" class="list"></div>
+        </div>
+      </div>
+    </section>
 
-    <select id="tipo">
-      <option value="personal">Gasto Personal</option>
-      <option value="empresa">Gasto Empresa</option>
-      <option value="reembolso">Reembolso</option>
-    </select>
+    <section id="viajesView" class="view">
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="section-head"><h2>Nuevo viaje</h2></div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="viajeNombre">Nombre del viaje</label>
+              <input id="viajeNombre" type="text" placeholder="Ej. Viaje Arequipa" />
+            </div>
+            <div class="field">
+              <label for="viajeDestino">Destino</label>
+              <input id="viajeDestino" type="text" placeholder="Ej. Arequipa" />
+            </div>
+            <div class="field">
+              <label for="viajeInicio">Fecha inicio</label>
+              <input id="viajeInicio" type="date" />
+            </div>
+            <div class="field">
+              <label for="viajeFin">Fecha fin</label>
+              <input id="viajeFin" type="date" />
+            </div>
+            <div class="field">
+              <label for="viajeEstado">Estado</label>
+              <select id="viajeEstado">
+                <option value="activo">Activo</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="cerrado">Cerrado</option>
+              </select>
+            </div>
+            <div class="field span-2">
+              <label for="viajeMotivo">Motivo</label>
+              <textarea id="viajeMotivo" placeholder="Motivo del viaje"></textarea>
+            </div>
+            <div class="field span-2">
+              <button class="btn btn-dark" onclick="agregarViaje()">Guardar viaje</button>
+            </div>
+          </div>
+        </div>
 
-    <input type="number" id="monto" placeholder="Monto">
-    <input type="text" id="descripcion" placeholder="Descripción">
+        <div class="card">
+          <div class="section-head"><h2>Lista de viajes</h2></div>
+          <div id="viajesList" class="list"></div>
+        </div>
+      </div>
+    </section>
 
-    <button onclick="agregarMovimiento()">Agregar</button>
-  </section>
+    <section id="reportesView" class="view">
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="section-head"><h2>Exportar viajes a Excel</h2></div>
+          <div class="form-grid">
+            <div class="field span-2">
+              <label for="reporteViaje">Selecciona viaje</label>
+              <select id="reporteViaje"></select>
+            </div>
+            <div class="field span-2">
+              <button class="btn btn-dark" onclick="exportarCSVViaje()">Exportar CSV del viaje</button>
+            </div>
+          </div>
+          <p class="meta">Se descarga como CSV y puedes abrirlo directamente en Excel.</p>
+        </div>
 
-  <!-- LISTA -->
-  <section>
-    <h2>Movimientos</h2>
-    <ul id="lista"></ul>
-  </section>
+        <div class="card">
+          <div class="section-head"><h2>Reporte mensual</h2></div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="reporteMes">Mes</label>
+              <input id="reporteMes" type="month" onchange="renderReporteMensual()" />
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button class="btn btn-dark" onclick="exportarCSVMes()">Exportar CSV del mes</button>
+            </div>
+          </div>
+          <div id="reporteMensualResumen" class="list" style="margin-top:12px;"></div>
+        </div>
+      </div>
 
-</main>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="section-head"><h2>Movimientos del mes</h2></div>
+          <div id="reporteMensualMovs" class="list"></div>
+        </div>
 
-<script src="app.js"></script>
+        <div class="card">
+          <div class="section-head"><h2>Resumen financiero</h2></div>
+          <div id="reporteResumen" class="list"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer-space"></div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'control_viaticos_pro_v2';
+    const defaultData = {
+      config: { saldoBase: 0, saldoObjetivo: 0 },
+      viajes: [],
+      movimientos: []
+    };
+    const categorias = {
+      personal: ['Comida','Transporte personal','Compras','Servicios','Salud','Otros'],
+      empresa: ['Transporte','Hospedaje','Alimentación','Peajes','Materiales','Otros'],
+      reembolso: ['Depósito empresa']
+    };
+
+    let data = cargarData();
+    let deferredPrompt = null;
+    let editMovimientoId = null;
+    let pendingComprobante = null;
+
+    function cargarData(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : structuredClone(defaultData);
+      }catch{ return structuredClone(defaultData); }
+    }
+    function guardarData(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+    function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+    function money(n){ return 'S/ ' + Number(n || 0).toFixed(2); }
+    function fechaHoy(){ return new Date().toISOString().slice(0,10); }
+    function mesActual(){ return new Date().toISOString().slice(0,7); }
+    function setDefaultDates(){
+      document.getElementById('movFecha').value = fechaHoy();
+      document.getElementById('viajeInicio').value = fechaHoy();
+      document.getElementById('viajeFin').value = fechaHoy();
+      document.getElementById('reporteMes').value = mesActual();
+    }
+    function getViaje(id){ return data.viajes.find(v => v.id === id); }
+    function getMovimiento(id){ return data.movimientos.find(m => m.id === id); }
+
+    function getMetrics(){
+      const saldoBase = Number(data.config.saldoBase || 0);
+      const saldoObjetivo = Number(data.config.saldoObjetivo || 0);
+      let gastosPersonales = 0, gastosEmpresa = 0, reembolsos = 0, ajustes = 0;
+      for(const m of data.movimientos){
+        if(m.tipo === 'personal') gastosPersonales += Number(m.monto);
+        if(m.tipo === 'empresa') gastosEmpresa += Number(m.monto);
+        if(m.tipo === 'reembolso') reembolsos += Number(m.monto);
+        if(m.tipo === 'ajuste') ajustes += Number(m.monto);
+      }
+      const pendiente = gastosEmpresa - reembolsos;
+      const saldoActual = saldoBase - gastosPersonales - gastosEmpresa + reembolsos + ajustes;
+      const viajesActivos = data.viajes.filter(v => v.estado === 'activo').length;
+      const diferenciaObjetivo = saldoActual - saldoObjetivo;
+      return { saldoBase, saldoObjetivo, saldoActual, gastosPersonales, gastosEmpresa, reembolsos, ajustes, pendiente, viajesActivos, diferenciaObjetivo };
+    }
+
+    function renderTabs(){
+      const tabs = [
+        {id:'dashboardView',label:'Dashboard'},
+        {id:'movimientosView',label:'Movimientos'},
+        {id:'viajesView',label:'Viajes'},
+        {id:'reportesView',label:'Reportes'}
+      ];
+      const container = document.getElementById('tabs');
+      container.innerHTML = tabs.map((t,i)=>`<button class="tab ${i===0?'active':''}" data-view="${t.id}">${t.label}</button>`).join('');
+      container.querySelectorAll('.tab').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+          document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById(btn.dataset.view).classList.add('active');
+        });
+      });
+    }
+
+    function renderStats(){
+      const m = getMetrics();
+      const items = [
+        {title:'Saldo actual',value:money(m.saldoActual),sub:'Tu dinero real disponible ahora'},
+        {title:'Pendiente por reembolso',value:money(m.pendiente),sub:'Dinero que aún te debe la empresa'},
+        {title:'Gastos personales',value:money(m.gastosPersonales),sub:'Acumulado total personal'},
+        {title:'Reembolsos recibidos',value:money(m.reembolsos),sub:`${m.viajesActivos} viaje(s) activos`}
+      ];
+      document.getElementById('statsGrid').innerHTML = items.map(s=>`
+        <div class="card">
+          <div class="stat-title">${s.title}</div>
+          <div class="stat-value">${s.value}</div>
+          <div class="stat-sub">${s.sub}</div>
+        </div>`).join('');
+
+      document.getElementById('saldoBase').value = data.config.saldoBase || '';
+      document.getElementById('saldoObjetivo').value = data.config.saldoObjetivo || '';
+
+      const resumen = [
+        ['Monto base', money(m.saldoBase)],
+        ['Monto objetivo', money(m.saldoObjetivo)],
+        ['Total empresa adelantado por ti', money(m.gastosEmpresa)],
+        ['Ajustes manuales', money(m.ajustes)],
+        ['Diferencia contra objetivo', `${m.diferenciaObjetivo >= 0 ? '+' : ''}${money(m.diferenciaObjetivo)}`]
+      ];
+      document.getElementById('resumenRapido').innerHTML = resumen.map(r=>`
+        <div class="item">
+          <div><h4>${r[0]}</h4><div class="meta">Resumen general calculado automáticamente</div></div>
+          <div class="price">${r[1]}</div>
+        </div>`).join('');
+
+      document.getElementById('reporteResumen').innerHTML = resumen.map(r=>`
+        <div class="item">
+          <div><h4>${r[0]}</h4></div>
+          <div class="price">${r[1]}</div>
+        </div>`).join('');
+    }
+
+    function actualizarCategorias(){
+      const tipo = document.getElementById('movTipo').value;
+      const select = document.getElementById('movCategoria');
+      select.innerHTML = categorias[tipo].map(c=>`<option value="${c}">${c}</option>`).join('');
+    }
+
+    function actualizarViajesSelects(){
+      const viajeOptions = ['<option value="">Sin asociar</option>']
+        .concat(data.viajes.map(v=>`<option value="${v.id}">${v.nombre} - ${v.destino || 'Sin destino'}</option>`))
+        .join('');
+      document.getElementById('movViaje').innerHTML = viajeOptions;
+
+      const reporte = document.getElementById('reporteViaje');
+      reporte.innerHTML = data.viajes.length
+        ? data.viajes.map(v=>`<option value="${v.id}">${v.nombre} - ${v.destino || 'Sin destino'}</option>`).join('')
+        : '<option value="">No hay viajes</option>';
+    }
+
+    function actualizarViajeEnFormulario(){
+      const tipo = document.getElementById('movTipo').value;
+      document.getElementById('viajeField').classList.toggle('hidden', tipo === 'personal');
+    }
+
+    function guardarConfiguracion(){
+      data.config.saldoBase = Number(document.getElementById('saldoBase').value || 0);
+      data.config.saldoObjetivo = Number(document.getElementById('saldoObjetivo').value || 0);
+      guardarData(); render();
+      alert('Configuración guardada.');
+    }
+
+    function agregarAjuste(){
+      const monto = Number(document.getElementById('ajusteMonto').value || 0);
+      const descripcion = document.getElementById('ajusteDescripcion').value.trim();
+      if(!monto) return alert('Ingresa un monto de ajuste.');
+      data.movimientos.unshift({
+        id: uid(), tipo:'ajuste', categoria:'Ajuste manual', descripcion: descripcion || 'Ajuste manual de saldo',
+        nota:'', fecha:fechaHoy(), monto, viajeId:'', comprobante:''
+      });
+      guardarData();
+      document.getElementById('ajusteMonto').value = '';
+      document.getElementById('ajusteDescripcion').value = '';
+      render();
+    }
+
+    async function fileToCompressedDataURL(file){
+      if(!file) return '';
+      return new Promise((resolve,reject)=>{
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = new Image();
+          img.onload = ()=>{
+            const max = 1280;
+            let {width, height} = img;
+            if(width > height && width > max){ height = Math.round(height * (max / width)); width = max; }
+            else if(height >= width && height > max){ width = Math.round(width * (max / height)); height = max; }
+            const canvas = document.createElement('canvas');
+            canvas.width = width; canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.76));
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderComprobantePreview(dataUrl){
+      const box = document.getElementById('comprobantePreview');
+      if(!dataUrl){ box.classList.add('hidden'); box.innerHTML=''; return; }
+      box.classList.remove('hidden');
+      box.innerHTML = `
+        <img class="thumb thumb-lg" src="${dataUrl}" alt="Comprobante" />
+        <button type="button" class="btn btn-danger" onclick="quitarComprobantePendiente()">Quitar imagen</button>
+      `;
+    }
+
+    function quitarComprobantePendiente(){
+      pendingComprobante = null;
+      document.getElementById('movComprobante').value = '';
+      renderComprobantePreview('');
+    }
+
+    async function guardarMovimiento(){
+      const tipo = document.getElementById('movTipo').value;
+      const fecha = document.getElementById('movFecha').value;
+      const monto = Number(document.getElementById('movMonto').value || 0);
+      const categoria = document.getElementById('movCategoria').value;
+      const descripcion = document.getElementById('movDescripcion').value.trim();
+      const nota = document.getElementById('movNota').value.trim();
+      const viajeId = document.getElementById('movViaje').value;
+      const file = document.getElementById('movComprobante').files[0];
+
+      if(!fecha) return alert('Selecciona una fecha.');
+      if(!monto) return alert('Ingresa un monto válido.');
+      if(!descripcion) return alert('Ingresa una descripción.');
+
+      if((tipo === 'empresa' || tipo === 'reembolso') && !viajeId && data.viajes.length > 0){
+        const ok = confirm('Este movimiento no está asociado a ningún viaje. ¿Deseas guardarlo así?');
+        if(!ok) return;
+      }
+
+      let comprobante = pendingComprobante || '';
+      if(file){
+        try{ comprobante = await fileToCompressedDataURL(file); }
+        catch{ return alert('No se pudo procesar la imagen del comprobante.'); }
+      }
+
+      const payload = {
+        tipo, fecha, monto, categoria, descripcion, nota,
+        viajeId: tipo === 'personal' ? '' : viajeId,
+        comprobante
+      };
+
+      if(editMovimientoId){
+        const mov = getMovimiento(editMovimientoId);
+        if(!mov) return alert('No se encontró el movimiento a editar.');
+        Object.assign(mov, payload);
+      }else{
+        data.movimientos.unshift({ id: uid(), ...payload });
+      }
+
+      guardarData();
+      limpiarFormularioMovimiento();
+      render();
+      alert(editMovimientoId ? 'Movimiento actualizado correctamente.' : 'Movimiento guardado correctamente.');
+    }
+
+    function limpiarFormularioMovimiento(){
+      editMovimientoId = null;
+      pendingComprobante = null;
+      document.getElementById('movFormTitle').textContent = 'Registrar movimiento';
+      document.getElementById('saveMovBtn').textContent = 'Guardar movimiento';
+      document.getElementById('cancelEditBtn').classList.add('hidden');
+      document.getElementById('movTipo').value = 'personal';
+      document.getElementById('movFecha').value = fechaHoy();
+      document.getElementById('movMonto').value = '';
+      document.getElementById('movDescripcion').value = '';
+      document.getElementById('movNota').value = '';
+      document.getElementById('movViaje').value = '';
+      document.getElementById('movComprobante').value = '';
+      actualizarCategorias();
+      actualizarViajeEnFormulario();
+      renderComprobantePreview('');
+    }
+
+    function cargarMovimientoEnFormulario(id){
+      const m = getMovimiento(id);
+      if(!m) return;
+      editMovimientoId = id;
+      pendingComprobante = m.comprobante || '';
+      document.getElementById('movFormTitle').textContent = 'Editar movimiento';
+      document.getElementById('saveMovBtn').textContent = 'Actualizar movimiento';
+      document.getElementById('cancelEditBtn').classList.remove('hidden');
+      document.getElementById('movTipo').value = m.tipo;
+      actualizarCategorias();
+      document.getElementById('movFecha').value = m.fecha;
+      document.getElementById('movMonto').value = m.monto;
+      document.getElementById('movCategoria').value = m.categoria;
+      document.getElementById('movDescripcion').value = m.descripcion;
+      document.getElementById('movNota').value = m.nota || '';
+      document.getElementById('movViaje').value = m.viajeId || '';
+      actualizarViajeEnFormulario();
+      renderComprobantePreview(pendingComprobante);
+      document.querySelector('[data-view="movimientosView"]').click();
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+
+    function cancelarEdicion(){ limpiarFormularioMovimiento(); }
+
+    function agregarViaje(){
+      const nombre = document.getElementById('viajeNombre').value.trim();
+      const destino = document.getElementById('viajeDestino').value.trim();
+      const fechaInicio = document.getElementById('viajeInicio').value;
+      const fechaFin = document.getElementById('viajeFin').value;
+      const estado = document.getElementById('viajeEstado').value;
+      const motivo = document.getElementById('viajeMotivo').value.trim();
+      if(!nombre) return alert('Ingresa el nombre del viaje.');
+      if(!fechaInicio || !fechaFin) return alert('Ingresa las fechas del viaje.');
+      data.viajes.unshift({ id: uid(), nombre, destino, fechaInicio, fechaFin, estado, motivo });
+      guardarData();
+      document.getElementById('viajeNombre').value = '';
+      document.getElementById('viajeDestino').value = '';
+      document.getElementById('viajeInicio').value = fechaHoy();
+      document.getElementById('viajeFin').value = fechaHoy();
+      document.getElementById('viajeEstado').value = 'activo';
+      document.getElementById('viajeMotivo').value = '';
+      render();
+      alert('Viaje guardado correctamente.');
+    }
+
+    function eliminarViaje(id){
+      const tieneMov = data.movimientos.some(m => m.viajeId === id);
+      if(tieneMov) return alert('No puedes eliminar este viaje porque tiene movimientos asociados.');
+      if(!confirm('¿Eliminar este viaje?')) return;
+      data.viajes = data.viajes.filter(v => v.id !== id);
+      guardarData(); render();
+    }
+
+    function cambiarEstadoViaje(id){
+      const viaje = getViaje(id);
+      if(!viaje) return;
+      const estados = ['activo','pendiente','cerrado'];
+      viaje.estado = estados[(estados.indexOf(viaje.estado)+1)%estados.length];
+      guardarData(); render();
+    }
+
+    function eliminarMovimiento(id){
+      if(!confirm('¿Eliminar este movimiento?')) return;
+      data.movimientos = data.movimientos.filter(m => m.id !== id);
+      guardarData(); render();
+    }
+
+    function statsViaje(viajeId){
+      let empresa = 0, reembolso = 0;
+      const movimientos = data.movimientos.filter(m => m.viajeId === viajeId);
+      movimientos.forEach(m => {
+        if(m.tipo === 'empresa') empresa += Number(m.monto);
+        if(m.tipo === 'reembolso') reembolso += Number(m.monto);
+      });
+      return { empresa, reembolso, pendiente: empresa - reembolso, cantidad: movimientos.length };
+    }
+
+    function renderViajes(){
+      const cont = document.getElementById('viajesList');
+      if(!data.viajes.length){
+        cont.innerHTML = '<div class="empty">Aún no tienes viajes registrados.</div>';
+        return;
+      }
+      cont.innerHTML = data.viajes.map(v => {
+        const s = statsViaje(v.id);
+        return `
+          <div class="item">
+            <div>
+              <h4>${v.nombre}</h4>
+              <div class="meta">${v.destino || 'Sin destino'} · ${v.fechaInicio} a ${v.fechaFin}</div>
+              <div class="meta" style="margin-top:6px;">${v.motivo || 'Sin motivo registrado'}</div>
+              <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+                <span class="pill ${v.estado}">${v.estado}</span>
+                <span class="pill empresa">Empresa: ${money(s.empresa)}</span>
+                <span class="pill reembolso">Reembolsado: ${money(s.reembolso)}</span>
+                <span class="pill personal">Pendiente: ${money(s.pendiente)}</span>
+              </div>
+            </div>
+            <div class="toolbar">
+              <button class="btn btn-light" onclick="filtrarPorViajeYIr('${v.id}')">Ver movimientos</button>
+              <button class="btn btn-light" onclick="cambiarEstadoViaje('${v.id}')">Cambiar estado</button>
+              <button class="btn btn-danger" onclick="eliminarViaje('${v.id}')">Eliminar</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function filtrarPorViajeYIr(viajeId){
+      document.querySelector('[data-view="movimientosView"]').click();
+      document.getElementById('filtroBusqueda').value = '';
+      window.scrollTo({top:0, behavior:'smooth'});
+      const movs = data.movimientos.filter(m => m.viajeId === viajeId);
+      const cont = document.getElementById('movimientosList');
+      if(!movs.length){
+        cont.innerHTML = '<div class="empty">Ese viaje aún no tiene movimientos.</div>';
+        return;
+      }
+      cont.innerHTML = movs.map(renderMovimientoItem).join('');
+    }
+
+    function renderMovimientoItem(m){
+      const viaje = m.viajeId ? getViaje(m.viajeId) : null;
+      return `
+        <div class="item">
+          <div>
+            <h4>${m.descripcion}</h4>
+            <div class="meta">${m.fecha} · ${m.categoria}</div>
+            ${viaje ? `<div class="meta">Viaje: ${viaje.nombre}</div>` : ''}
+            ${m.nota ? `<div class="meta">Nota: ${m.nota}</div>` : ''}
+            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <span class="pill ${m.tipo}">${m.tipo}</span>
+              ${m.comprobante ? '<span class="pill pendiente">Con comprobante</span>' : ''}
+            </div>
+            ${m.comprobante ? `<div style="margin-top:10px;"><img class="thumb" src="${m.comprobante}" alt="Comprobante" /></div>` : ''}
+          </div>
+          <div style="text-align:right;">
+            <div class="price">${m.tipo === 'reembolso' || m.tipo === 'ajuste' ? '+' : '-'} ${money(m.monto)}</div>
+            <div style="margin-top:10px;" class="toolbar">
+              <button class="btn btn-light" onclick="cargarMovimientoEnFormulario('${m.id}')">Editar</button>
+              <button class="btn btn-danger" onclick="eliminarMovimiento('${m.id}')">Eliminar</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderMovimientos(){
+      const cont = document.getElementById('movimientosList');
+      const filtro = document.getElementById('filtroTipo').value;
+      const term = document.getElementById('filtroBusqueda').value.trim().toLowerCase();
+      let movimientos = [...data.movimientos];
+      if(filtro !== 'todos') movimientos = movimientos.filter(m => m.tipo === filtro);
+      if(term) movimientos = movimientos.filter(m =>
+        (m.descripcion || '').toLowerCase().includes(term) ||
+        (m.categoria || '').toLowerCase().includes(term) ||
+        (m.nota || '').toLowerCase().includes(term)
+      );
+      if(!movimientos.length){
+        cont.innerHTML = '<div class="empty">No hay movimientos para mostrar.</div>';
+        return;
+      }
+      cont.innerHTML = movimientos.map(renderMovimientoItem).join('');
+    }
+
+    function csvEscape(v){ return '"' + String(v ?? '').replaceAll('"', '""') + '"'; }
+
+    function exportarCSV(filename, rows){
+      const csv = rows.map(r => r.map(csvEscape).join(',')).join('\n');
+      const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function exportarCSVViaje(){
+      const viajeId = document.getElementById('reporteViaje').value;
+      if(!viajeId) return alert('Selecciona un viaje.');
+      const viaje = getViaje(viajeId);
+      if(!viaje) return alert('No se encontró el viaje.');
+      const movs = data.movimientos.filter(m => m.viajeId === viajeId);
+      const rows = [['Fecha','Tipo','Categoría','Descripción','Monto','Nota','Viaje']];
+      movs.forEach(m => rows.push([m.fecha,m.tipo,m.categoria,m.descripcion,Number(m.monto).toFixed(2),m.nota || '',viaje.nombre]));
+      exportarCSV(`${viaje.nombre.replace(/\s+/g,'_')}_reporte.csv`, rows);
+    }
+
+    function movimientosDelMes(mes){
+      return data.movimientos.filter(m => (m.fecha || '').slice(0,7) === mes);
+    }
+
+    function renderReporteMensual(){
+      const mes = document.getElementById('reporteMes').value;
+      const movs = movimientosDelMes(mes);
+      let personal = 0, empresa = 0, reembolso = 0, ajuste = 0;
+      movs.forEach(m=>{
+        if(m.tipo === 'personal') personal += Number(m.monto);
+        if(m.tipo === 'empresa') empresa += Number(m.monto);
+        if(m.tipo === 'reembolso') reembolso += Number(m.monto);
+        if(m.tipo === 'ajuste') ajuste += Number(m.monto);
+      });
+      const resumen = [
+        ['Gastos personales del mes', money(personal)],
+        ['Gastos empresa del mes', money(empresa)],
+        ['Reembolsos del mes', money(reembolso)],
+        ['Ajustes del mes', money(ajuste)],
+        ['Pendiente del mes', money(empresa - reembolso)]
+      ];
+      document.getElementById('reporteMensualResumen').innerHTML = resumen.map(r=>`
+        <div class="item">
+          <div><h4>${r[0]}</h4></div>
+          <div class="price">${r[1]}</div>
+        </div>`).join('');
+      const cont = document.getElementById('reporteMensualMovs');
+      cont.innerHTML = movs.length ? movs.map(renderMovimientoItem).join('') : '<div class="empty">No hay movimientos en ese mes.</div>';
+    }
+
+    function exportarCSVMes(){
+      const mes = document.getElementById('reporteMes').value;
+      if(!mes) return alert('Selecciona un mes.');
+      const movs = movimientosDelMes(mes);
+      const rows = [['Fecha','Tipo','Categoría','Descripción','Monto','Nota','Viaje']];
+      movs.forEach(m=>{
+        const viaje = m.viajeId ? getViaje(m.viajeId) : null;
+        rows.push([m.fecha,m.tipo,m.categoria,m.descripcion,Number(m.monto).toFixed(2),m.nota || '',viaje ? viaje.nombre : '']);
+      });
+      exportarCSV(`reporte_${mes}.csv`, rows);
+    }
+
+    function exportarJSON(){
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'control-viaticos-respaldo.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function importarJSON(file){
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try{
+          const parsed = JSON.parse(reader.result);
+          if(!parsed.config || !Array.isArray(parsed.viajes) || !Array.isArray(parsed.movimientos)) throw new Error();
+          data = parsed;
+          guardarData();
+          limpiarFormularioMovimiento();
+          render();
+          alert('Respaldo importado correctamente.');
+        }catch{ alert('El archivo no es válido.'); }
+      };
+      reader.readAsText(file);
+    }
+
+    function reiniciarTodo(){
+      if(!confirm('Esto borrará todos tus datos guardados en esta app. ¿Deseas continuar?')) return;
+      data = structuredClone(defaultData);
+      guardarData();
+      limpiarFormularioMovimiento();
+      render();
+    }
+
+    function setupInstallPrompt(){
+      const installBtn = document.getElementById('installBtn');
+      const installTip = document.getElementById('installTip');
+      installTip.style.display = 'block';
+      installTip.textContent = 'Puedes instalarla desde el navegador para usarla como app en tu celular o PC.';
+      window.addEventListener('beforeinstallprompt', (e)=>{
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn.classList.remove('hidden');
+      });
+      installBtn.addEventListener('click', async ()=>{
+        if(!deferredPrompt) return;
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        installBtn.classList.add('hidden');
+      });
+    }
+
+    function setupServiceWorker(){
+      if('serviceWorker' in navigator){
+        window.addEventListener('load', ()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
+      }
+    }
+
+    function render(){
+      actualizarCategorias();
+      actualizarViajesSelects();
+      actualizarViajeEnFormulario();
+      renderStats();
+      renderMovimientos();
+      renderViajes();
+      renderReporteMensual();
+    }
+
+    document.getElementById('importFile').addEventListener('change', (e)=>{
+      importarJSON(e.target.files[0]);
+      e.target.value = '';
+    });
+
+    document.getElementById('movComprobante').addEventListener('change', async (e)=>{
+      const file = e.target.files[0];
+      if(!file){ pendingComprobante = null; renderComprobantePreview(''); return; }
+      try{
+        pendingComprobante = await fileToCompressedDataURL(file);
+        renderComprobantePreview(pendingComprobante);
+      }catch{
+        alert('No se pudo procesar la imagen.');
+      }
+    });
+
+    renderTabs();
+    setDefaultDates();
+    limpiarFormularioMovimiento();
+    render();
+    setupInstallPrompt();
+    setupServiceWorker();
+  </script>
 </body>
 </html>
