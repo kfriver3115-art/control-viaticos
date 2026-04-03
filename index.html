@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#243b8a" />
-  <meta name="description" content="Control de Dinero: saldo personal, viajes, préstamos, gastos, reembolsos y reportes." />
-  <title>Control de Dinero</title>
+  <meta name="description" content="Control de Viáticos Pro: saldo personal, viajes, préstamos, gastos, reembolsos y reportes." />
+  <title>Control de Viáticos Pro</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
@@ -55,7 +55,7 @@
     .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 10px;font-size:.83rem;font-weight:700}
     .pill.personal,.pill.ajuste{background:#ede9fe;color:#5b21b6}
     .pill.empresa{background:#dbeafe;color:#1d4ed8}
-    .pill.reembolso,.pill.cobro_prestamo{background:#dcfce7;color:#166534}
+    .pill.reembolso,.pill.cobro_prestamo,.pill.ingreso{background:#dcfce7;color:#166534}
     .pill.prestamo_entregado,.pill.prestamo{background:#fee2e2;color:#b91c1c}
     .loan-overdue{border:1px solid #fecaca;background:#fff1f2}
     .overdue-text{color:#b91c1c;font-weight:700}
@@ -83,8 +83,8 @@
   <div class="app">
     <section class="topbar">
       <div>
-        <h1>💼 Control de Dinero</h1>
-        <p>Controla tu saldo real, tus gastos personales, viáticos, préstamos personales, reembolsos y comprobantes.</p>
+        <h1>💼 Control de Viáticos Pro</h1>
+        <p>Controla tu saldo real, ingresos, gastos personales, viáticos, préstamos personales, reembolsos y comprobantes.</p>
         <div id="installTip" class="install-tip"></div>
       </div>
       <div class="actions">
@@ -99,7 +99,16 @@
     <div class="tabs" id="tabs"></div>
 
     <section id="dashboardView" class="view active">
+      <div class="section-head"><h2>Resumen general</h2></div>
       <div class="grid grid-4" id="statsGrid"></div>
+
+      <div class="section-head" style="margin-top:18px;">
+        <h2>Resumen del mes</h2>
+        <div class="toolbar">
+          <input id="dashboardMes" type="month" onchange="renderStats()" />
+        </div>
+      </div>
+      <div class="grid grid-4" id="statsGridMes"></div>
 
       <div class="grid grid-2">
         <div class="card">
@@ -146,6 +155,7 @@
                 <option value="personal">Gasto personal</option>
                 <option value="empresa">Gasto de empresa</option>
                 <option value="reembolso">Reembolso recibido</option>
+                <option value="ingreso">Ingreso</option>
               </select>
             </div>
             <div class="field">
@@ -193,6 +203,7 @@
                 <option value="personal">Solo personales</option>
                 <option value="empresa">Solo empresa</option>
                 <option value="reembolso">Solo reembolsos</option>
+                <option value="ingreso">Solo ingresos</option>
                 <option value="prestamo_entregado">Préstamos entregados</option>
                 <option value="cobro_prestamo">Cobros de préstamos</option>
                 <option value="ajuste">Solo ajustes</option>
@@ -415,6 +426,7 @@
       personal: ['Comida','Transporte personal','Compras','Servicios','Salud','Otros'],
       empresa: ['Transporte','Hospedaje','Alimentación','Peajes','Materiales','Otros'],
       reembolso: ['Depósito empresa'],
+      ingreso: ['Sueldo','Ingreso extra','Devolución','Venta','Otros'],
       prestamo_entregado: ['Préstamo personal'],
       cobro_prestamo: ['Cobro de préstamo']
     };
@@ -442,6 +454,7 @@
       document.getElementById('viajeInicio').value = fechaHoy();
       document.getElementById('viajeFin').value = fechaHoy();
       document.getElementById('reporteMes').value = mesActual();
+      document.getElementById('dashboardMes').value = mesActual();
       document.getElementById('prestamoFecha').value = fechaHoy();
       document.getElementById('prestamoVencimiento').value = fechaHoy();
       document.getElementById('cobroFecha').value = fechaHoy();
@@ -450,11 +463,11 @@
     function getPrestamo(id){ return (data.prestamos || []).find(p => p.id === id); }
     function getMovimiento(id){ return data.movimientos.find(m => m.id === id); }
 
-    function getMetrics(){
-      const saldoBase = Number(data.config.saldoBase || 0);
-      const saldoObjetivo = Number(data.config.saldoObjetivo || 0);
-      let gastosPersonales = 0, gastosEmpresa = 0, reembolsos = 0, ajustes = 0, prestamosEntregados = 0, cobrosPrestamos = 0;
-      for(const m of data.movimientos){
+
+    function resumirMovimientos(movs){
+      let ingresos = 0, gastosPersonales = 0, gastosEmpresa = 0, reembolsos = 0, ajustes = 0, prestamosEntregados = 0, cobrosPrestamos = 0;
+      for(const m of movs){
+        if(m.tipo === 'ingreso') ingresos += Number(m.monto);
         if(m.tipo === 'personal') gastosPersonales += Number(m.monto);
         if(m.tipo === 'empresa') gastosEmpresa += Number(m.monto);
         if(m.tipo === 'reembolso') reembolsos += Number(m.monto);
@@ -462,14 +475,30 @@
         if(m.tipo === 'prestamo_entregado') prestamosEntregados += Number(m.monto);
         if(m.tipo === 'cobro_prestamo') cobrosPrestamos += Number(m.monto);
       }
-      const pendiente = gastosEmpresa - reembolsos;
+      return { ingresos, gastosPersonales, gastosEmpresa, reembolsos, ajustes, prestamosEntregados, cobrosPrestamos };
+    }
+
+    function getMetrics(){
+      const saldoBase = Number(data.config.saldoBase || 0);
+      const saldoObjetivo = Number(data.config.saldoObjetivo || 0);
+      const r = resumirMovimientos(data.movimientos);
+      const pendiente = r.gastosEmpresa - r.reembolsos;
       const prestadoPendiente = (data.prestamos || []).reduce((acc,p)=> acc + Math.max(0, Number(p.monto || 0) - Number(p.capitalRecuperado || 0)), 0);
       const interesesGanados = (data.prestamos || []).reduce((acc,p)=> acc + Number(p.interesRecuperado || 0), 0);
-      const saldoActual = saldoBase - gastosPersonales - gastosEmpresa - prestamosEntregados + reembolsos + cobrosPrestamos + ajustes;
+      const saldoActual = saldoBase + r.ingresos - r.gastosPersonales - r.gastosEmpresa - r.prestamosEntregados + r.reembolsos + r.cobrosPrestamos + r.ajustes;
       const viajesActivos = data.viajes.filter(v => v.estado === 'activo').length;
       const prestamosActivos = (data.prestamos || []).filter(p => p.estado !== 'cerrado').length;
       const diferenciaObjetivo = saldoActual - saldoObjetivo;
-      return { saldoBase, saldoObjetivo, saldoActual, gastosPersonales, gastosEmpresa, reembolsos, ajustes, pendiente, viajesActivos, diferenciaObjetivo, prestamosEntregados, cobrosPrestamos, prestadoPendiente, interesesGanados, prestamosActivos };
+      return { saldoBase, saldoObjetivo, saldoActual, viajesActivos, diferenciaObjetivo, prestadoPendiente, interesesGanados, prestamosActivos, pendiente, ...r };
+    }
+
+    function getMetricsMes(mes){
+      const r = resumirMovimientos(movimientosDelMes(mes));
+      return {
+        ...r,
+        pendienteMes: r.gastosEmpresa - r.reembolsos,
+        flujoNetoMes: r.ingresos + r.reembolsos + r.cobrosPrestamos + r.ajustes - r.gastosPersonales - r.gastosEmpresa - r.prestamosEntregados
+      };
     }
 
     function renderTabs(){
@@ -494,14 +523,29 @@
 
     function renderStats(){
       const m = getMetrics();
+      const mes = document.getElementById('dashboardMes')?.value || mesActual();
+      const mm = getMetricsMes(mes);
+
       const items = [
         {title:'Saldo actual',value:money(m.saldoActual),sub:'Tu dinero real disponible ahora'},
         {title:'Pendiente por reembolso',value:money(m.pendiente),sub:'Dinero que aún te debe la empresa'},
         {title:'Prestado pendiente',value:money(m.prestadoPendiente),sub:`${m.prestamosActivos} préstamo(s) abiertos`},
-        {title:'Gastos personales',value:money(m.gastosPersonales),sub:'Acumulado total personal'},
-        {title:'Reembolsos recibidos',value:money(m.reembolsos),sub:`${m.viajesActivos} viaje(s) activos`}
+        {title:'Ingresos acumulados',value:money(m.ingresos),sub:'Incluye sueldo y otros ingresos'}
       ];
       document.getElementById('statsGrid').innerHTML = items.map(s=>`
+        <div class="card">
+          <div class="stat-title">${s.title}</div>
+          <div class="stat-value">${s.value}</div>
+          <div class="stat-sub">${s.sub}</div>
+        </div>`).join('');
+
+      const itemsMes = [
+        {title:'Ingresos del mes', value: money(mm.ingresos), sub:'Sueldo y otros ingresos del mes'},
+        {title:'Gastos personales del mes', value: money(mm.gastosPersonales), sub:'Solo movimientos de este mes'},
+        {title:'Gastos empresa del mes', value: money(mm.gastosEmpresa), sub:'Lo adelantado para la empresa este mes'},
+        {title:'Préstamos entregados del mes', value: money(mm.prestamosEntregados), sub:'Dinero prestado a terceros este mes'}
+      ];
+      document.getElementById('statsGridMes').innerHTML = itemsMes.map(s=>`
         <div class="card">
           <div class="stat-title">${s.title}</div>
           <div class="stat-value">${s.value}</div>
@@ -512,13 +556,14 @@
       document.getElementById('saldoObjetivo').value = data.config.saldoObjetivo || '';
 
       const resumen = [
-        ['Saldo Base', money(m.saldoBase)],
+        ['Monto base', money(m.saldoBase)],
         ['Monto objetivo', money(m.saldoObjetivo)],
-        ['Total de dinero prestado a empresa', money(m.gastosEmpresa)],
+        ['Ingresos acumulados', money(m.ingresos)],
+        ['Total empresa adelantado por ti', money(m.gastosEmpresa)],
         ['Total prestado a terceros', money(m.prestamosEntregados)],
         ['Intereses ganados', money(m.interesesGanados)],
         ['Ajustes manuales', money(m.ajustes)],
-        ['Saldo Actual', `${m.diferenciaObjetivo >= 0 ? '+' : ''}${money(m.diferenciaObjetivo)}`]
+        ['Diferencia contra objetivo', `${m.diferenciaObjetivo >= 0 ? '+' : ''}${money(m.diferenciaObjetivo)}`]
       ];
       document.getElementById('resumenRapido').innerHTML = resumen.map(r=>`
         <div class="item">
@@ -526,7 +571,14 @@
           <div class="price">${r[1]}</div>
         </div>`).join('');
 
-      document.getElementById('reporteResumen').innerHTML = resumen.map(r=>`
+      document.getElementById('reporteResumen').innerHTML = [
+        ['Ingresos del mes', money(mm.ingresos)],
+        ['Gastos personales del mes', money(mm.gastosPersonales)],
+        ['Gastos empresa del mes', money(mm.gastosEmpresa)],
+        ['Reembolsos del mes', money(mm.reembolsos)],
+        ['Cobros de préstamos del mes', money(mm.cobrosPrestamos)],
+        ['Flujo neto del mes', money(mm.flujoNetoMes)]
+      ].map(r=>`
         <div class="item">
           <div><h4>${r[0]}</h4></div>
           <div class="price">${r[1]}</div>
@@ -553,7 +605,7 @@
 
     function actualizarViajeEnFormulario(){
       const tipo = document.getElementById('movTipo').value;
-      document.getElementById('viajeField').classList.toggle('hidden', ['personal','prestamo_entregado','cobro_prestamo','ajuste'].includes(tipo));
+      document.getElementById('viajeField').classList.toggle('hidden', ['personal','ingreso','prestamo_entregado','cobro_prestamo','ajuste'].includes(tipo));
     }
 
     function guardarConfiguracion(){
@@ -645,7 +697,7 @@
 
       const payload = {
         tipo, fecha, monto, categoria, descripcion, nota,
-        viajeId: tipo === 'personal' ? '' : viajeId,
+        viajeId: ['personal','ingreso'].includes(tipo) ? '' : viajeId,
         comprobante
       };
 
@@ -817,7 +869,7 @@
             ${m.comprobante ? `<div style="margin-top:10px;"><img class="thumb" src="${m.comprobante}" alt="Comprobante" /></div>` : ''}
           </div>
           <div style="text-align:right;">
-            <div class="price">${['reembolso','ajuste','cobro_prestamo'].includes(m.tipo) ? '+' : '-'} ${money(m.monto)}</div>
+            <div class="price">${['reembolso','ajuste','cobro_prestamo','ingreso'].includes(m.tipo) ? '+' : '-'} ${money(m.monto)}</div>
             <div style="margin-top:10px;" class="toolbar">
               <button class="btn btn-light" onclick="cargarMovimientoEnFormulario('${m.id}')">Editar</button>
               <button class="btn btn-danger" onclick="eliminarMovimiento('${m.id}')">Eliminar</button>
@@ -1108,8 +1160,9 @@
     function renderReporteMensual(){
       const mes = document.getElementById('reporteMes').value;
       const movs = movimientosDelMes(mes);
-      let personal = 0, empresa = 0, reembolso = 0, ajuste = 0, prestado = 0, cobradoPrestamos = 0;
+      let ingresos = 0, personal = 0, empresa = 0, reembolso = 0, ajuste = 0, prestado = 0, cobradoPrestamos = 0;
       movs.forEach(m=>{
+        if(m.tipo === 'ingreso') ingresos += Number(m.monto);
         if(m.tipo === 'personal') personal += Number(m.monto);
         if(m.tipo === 'empresa') empresa += Number(m.monto);
         if(m.tipo === 'reembolso') reembolso += Number(m.monto);
@@ -1118,12 +1171,14 @@
         if(m.tipo === 'cobro_prestamo') cobradoPrestamos += Number(m.monto);
       });
       const resumen = [
+        ['Ingresos del mes', money(ingresos)],
         ['Gastos personales del mes', money(personal)],
         ['Gastos empresa del mes', money(empresa)],
         ['Reembolsos del mes', money(reembolso)],
         ['Préstamos entregados del mes', money(prestado)],
         ['Cobros de préstamos del mes', money(cobradoPrestamos)],
         ['Ajustes del mes', money(ajuste)],
+        ['Flujo neto del mes', money(ingresos + reembolso + cobradoPrestamos + ajuste - personal - empresa - prestado)],
         ['Pendiente empresa del mes', money(empresa - reembolso)]
       ];
       document.getElementById('reporteMensualResumen').innerHTML = resumen.map(r=>`
