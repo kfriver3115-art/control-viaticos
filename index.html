@@ -99,13 +99,14 @@
     <div class="tabs" id="tabs"></div>
 
     
+
 <section id="dashboardView" class="view active">
       <div class="accordion">
-        <div class="accordion-item active">
-          <button class="accordion-toggle" type="button" onclick="toggleAccordion(this)">
+        <details class="accordion-item" open>
+          <summary class="accordion-toggle">
             <span>Resumen del mes</span>
             <span>Ver / ocultar</span>
-          </button>
+          </summary>
           <div class="accordion-content">
             <div class="section-head" style="margin-top:6px;">
               <h2>Resumen del mes</h2>
@@ -115,26 +116,26 @@
             </div>
             <div class="grid grid-4" id="statsGridMes"></div>
           </div>
-        </div>
+        </details>
 
-        <div class="accordion-item">
-          <button class="accordion-toggle" type="button" onclick="toggleAccordion(this)">
+        <details class="accordion-item">
+          <summary class="accordion-toggle">
             <span>Resumen general</span>
             <span>Ver / ocultar</span>
-          </button>
+          </summary>
           <div class="accordion-content">
             <div class="section-head" style="margin-top:6px;">
               <h2>Resumen general</h2>
             </div>
             <div class="grid grid-4" id="statsGrid"></div>
           </div>
-        </div>
+        </details>
 
-        <div class="accordion-item">
-          <button class="accordion-toggle" type="button" onclick="toggleAccordion(this)">
+        <details class="accordion-item">
+          <summary class="accordion-toggle">
             <span>Resumen rápido</span>
             <span>Ver / ocultar</span>
-          </button>
+          </summary>
           <div class="accordion-content">
             <div class="grid grid-2">
               <div class="card">
@@ -170,11 +171,12 @@
               </div>
             </div>
           </div>
-        </div>
+        </details>
       </div>
     </section>
 
     <section id="movimientosView" class="view">
+
 
       <div class="grid grid-2">
         <div class="card">
@@ -554,12 +556,6 @@
         });
       });
     }
-
-    function toggleAccordion(button){
-      const item = button.closest('.accordion-item');
-      if(item){
-        item.classList.toggle('active');
-      }
     }
 
 
