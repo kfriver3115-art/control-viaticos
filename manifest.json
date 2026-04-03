@@ -1,6 +1,6 @@
 {
-  "name": "Control de Viáticos Pro",
-  "short_name": "Viáticos",
+  "name": "Control de Dinero",
+  "short_name": "Dinero",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f5f7fb",

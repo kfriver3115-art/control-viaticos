@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#243b8a" />
-  <meta name="description" content="Control de Viáticos Pro: saldo personal, viajes, préstamos, gastos, reembolsos y reportes." />
+  <meta name="description" content="Control de Dinero: saldo personal, viajes, préstamos, gastos, reembolsos y reportes." />
   <title>Control de Dinero</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icons/icon-192.png" />
@@ -71,7 +71,14 @@
     .preview-box{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
     .kpi-note{font-size:.86rem;color:var(--muted);margin-top:8px}
     .footer-space{height:28px}
-    @media (max-width: 920px){.grid-4,.grid-3,.grid-2,.form-grid{grid-template-columns:1fr 1fr}}
+
+    .accordion{display:flex;flex-direction:column;gap:12px;margin-top:18px}
+    .accordion-item{background:var(--card);border:1px solid #edf1f7;border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+    .accordion-toggle{list-style:none;cursor:pointer;padding:18px;display:flex;justify-content:space-between;align-items:center;font-weight:800;color:var(--text)}
+    .accordion-toggle::-webkit-details-marker{display:none}
+    .accordion-toggle span:last-child{color:var(--muted);font-size:.9rem}
+    .accordion-content{padding:0 18px 18px}
+        @media (max-width: 920px){.grid-4,.grid-3,.grid-2,.form-grid{grid-template-columns:1fr 1fr}}
     @media (max-width: 640px){
       .grid-4,.grid-3,.grid-2,.form-grid{grid-template-columns:1fr}
       .span-2{grid-column:span 1}.item{grid-template-columns:1fr}
@@ -99,7 +106,6 @@
     <div class="tabs" id="tabs"></div>
 
     
-
 <section id="dashboardView" class="view active">
       <div class="accordion">
         <details class="accordion-item" open>
@@ -139,9 +145,7 @@
           <div class="accordion-content">
             <div class="grid grid-2">
               <div class="card">
-                <div class="section-head">
-                  <h2>Configurar mi dinero</h2>
-                </div>
+                <div class="section-head"><h2>Configurar mi dinero</h2></div>
                 <div class="form-grid">
                   <div class="field">
                     <label for="saldoBase">Monto base / dinero inicial</label>
@@ -164,9 +168,7 @@
               </div>
 
               <div class="card">
-                <div class="section-head">
-                  <h2>Resumen rápido</h2>
-                </div>
+                <div class="section-head"><h2>Resumen rápido</h2></div>
                 <div id="resumenRapido" class="list"></div>
               </div>
             </div>
@@ -175,9 +177,7 @@
       </div>
     </section>
 
-    <section id="movimientosView" class="view">
-
-
+<section id="movimientosView" class="view">
       <div class="grid grid-2">
         <div class="card">
           <div class="section-head">
@@ -556,8 +556,6 @@
         });
       });
     }
-    }
-
 
     function renderStats(){
       const m = getMetrics();
