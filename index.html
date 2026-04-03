@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Control de Viáticos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>💼 Control de Viáticos</h1>
+</header>
+
+<main>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard">
+    <div class="card">
+      <h3>Saldo Actual</h3>
+      <p id="saldo">S/ 0</p>
+    </div>
+
+    <div class="card">
+      <h3>Pendiente Empresa</h3>
+      <p id="pendiente">S/ 0</p>
+    </div>
+  </section>
+
+  <!-- CONFIG SALDO -->
+  <section>
+    <h2>Mi dinero</h2>
+    <input type="number" id="saldoInicial" placeholder="Saldo inicial">
+    <button onclick="guardarSaldo()">Guardar</button>
+  </section>
+
+  <!-- GASTO -->
+  <section>
+    <h2>Agregar movimiento</h2>
+
+    <select id="tipo">
+      <option value="personal">Gasto Personal</option>
+      <option value="empresa">Gasto Empresa</option>
+      <option value="reembolso">Reembolso</option>
+    </select>
+
+    <input type="number" id="monto" placeholder="Monto">
+    <input type="text" id="descripcion" placeholder="Descripción">
+
+    <button onclick="agregarMovimiento()">Agregar</button>
+  </section>
+
+  <!-- LISTA -->
+  <section>
+    <h2>Movimientos</h2>
+    <ul id="lista"></ul>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
