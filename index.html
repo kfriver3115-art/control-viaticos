@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#243b8a" />
-  <meta name="description" content="Control de Viáticos Pro: saldo personal, viajes, gastos, reembolsos y reportes." />
-  <title>Control de Dinero</title>
+  <meta name="description" content="Control de Viáticos Pro: saldo personal, viajes, préstamos, gastos, reembolsos y reportes." />
+  <title>Control de Viáticos Pro</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
@@ -55,7 +55,10 @@
     .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 10px;font-size:.83rem;font-weight:700}
     .pill.personal,.pill.ajuste{background:#ede9fe;color:#5b21b6}
     .pill.empresa{background:#dbeafe;color:#1d4ed8}
-    .pill.reembolso{background:#dcfce7;color:#166534}
+    .pill.reembolso,.pill.cobro_prestamo{background:#dcfce7;color:#166534}
+    .pill.prestamo_entregado,.pill.prestamo{background:#fee2e2;color:#b91c1c}
+    .loan-overdue{border:1px solid #fecaca;background:#fff1f2}
+    .overdue-text{color:#b91c1c;font-weight:700}
     .pill.activo{background:#dbeafe;color:#1d4ed8}
     .pill.pendiente{background:#fef3c7;color:#92400e}
     .pill.cerrado{background:#e5e7eb;color:#374151}
@@ -80,8 +83,8 @@
   <div class="app">
     <section class="topbar">
       <div>
-        <h1>💼 Control de Dinero</h1>
-        <p>Controlar saldo real, gastos personales, viáticos, reembolsos y comprobantes.</p>
+        <h1>💼 Control de Viáticos Pro</h1>
+        <p>Controla tu saldo real, tus gastos personales, viáticos, préstamos personales, reembolsos y comprobantes.</p>
         <div id="installTip" class="install-tip"></div>
       </div>
       <div class="actions">
@@ -190,6 +193,8 @@
                 <option value="personal">Solo personales</option>
                 <option value="empresa">Solo empresa</option>
                 <option value="reembolso">Solo reembolsos</option>
+                <option value="prestamo_entregado">Préstamos entregados</option>
+                <option value="cobro_prestamo">Cobros de préstamos</option>
                 <option value="ajuste">Solo ajustes</option>
               </select>
               <input id="filtroBusqueda" type="text" placeholder="Buscar descripción" oninput="renderMovimientos()" />
@@ -246,6 +251,110 @@
       </div>
     </section>
 
+
+    <section id="prestamosView" class="view">
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="section-head"><h2 id="prestamoFormTitle">Nuevo préstamo personal</h2></div>
+          <div class="form-grid">
+            <input id="prestamoEditId" type="hidden" />
+            <div class="field">
+              <label for="prestamoPersona">Persona</label>
+              <input id="prestamoPersona" type="text" placeholder="Ej. Juan Pérez" />
+            </div>
+            <div class="field">
+              <label for="prestamoMonto">Monto prestado</label>
+              <input id="prestamoMonto" type="number" step="0.01" placeholder="Ej. 150" />
+            </div>
+            <div class="field">
+              <label for="prestamoFecha">Fecha de préstamo</label>
+              <input id="prestamoFecha" type="date" />
+            </div>
+            <div class="field">
+              <label for="prestamoVencimiento">Fecha esperada de devolución</label>
+              <input id="prestamoVencimiento" type="date" />
+            </div>
+            <div class="field">
+              <label for="prestamoInteres">Interés esperado (opcional)</label>
+              <input id="prestamoInteres" type="number" step="0.01" placeholder="Ej. 10" />
+            </div>
+            <div class="field">
+              <label for="prestamoEstado">Estado</label>
+              <select id="prestamoEstado">
+                <option value="pendiente">Pendiente</option>
+                <option value="pagando">Pagando</option>
+                <option value="cerrado">Cerrado</option>
+              </select>
+            </div>
+            <div class="field span-2">
+              <label for="prestamoNota">Observación</label>
+              <textarea id="prestamoNota" placeholder="Detalle del préstamo"></textarea>
+            </div>
+            <div class="field span-2">
+              <div class="toolbar">
+                <button class="btn btn-dark" id="prestamoGuardarBtn" onclick="guardarPrestamo()">Guardar préstamo</button>
+                <button class="btn btn-light hidden" id="prestamoCancelarBtn" onclick="cancelarEdicionPrestamo()">Cancelar edición</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-head"><h2>Cobrar préstamo</h2></div>
+          <div class="form-grid">
+            <div class="field span-2">
+              <label for="cobroPrestamoId">Préstamo</label>
+              <select id="cobroPrestamoId"></select>
+            </div>
+            <div class="field">
+              <label for="cobroFecha">Fecha de cobro</label>
+              <input id="cobroFecha" type="date" />
+            </div>
+            <div class="field">
+              <label for="cobroMonto">Monto total recibido</label>
+              <input id="cobroMonto" type="number" step="0.01" placeholder="Ej. 80" />
+            </div>
+            <div class="field">
+              <label for="cobroInteres">Interés incluido</label>
+              <input id="cobroInteres" type="number" step="0.01" placeholder="Ej. 5" />
+            </div>
+            <div class="field">
+              <label for="cobroNota">Observación</label>
+              <input id="cobroNota" type="text" placeholder="Ej. primera cuota / pago total" />
+            </div>
+            <div class="field span-2">
+              <button class="btn btn-success" onclick="registrarCobroPrestamo()">Registrar cobro</button>
+            </div>
+          </div>
+          <p class="meta">El sistema descuenta el préstamo de tu saldo al crearlo y vuelve a sumar el dinero cuando te pagan. Si hubo interés, también lo separa.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="section-head">
+            <h2>Lista de préstamos</h2>
+            <div class="toolbar">
+              <input id="prestamoFiltroPersona" type="text" placeholder="Filtrar por persona" oninput="renderPrestamos()" />
+              <select id="prestamoFiltroEstado" onchange="renderPrestamos()">
+                <option value="todos">Todos</option>
+                <option value="vencidos">Solo vencidos</option>
+                <option value="pendiente">Pendientes</option>
+                <option value="pagando">Pagando</option>
+                <option value="cerrado">Cerrados</option>
+              </select>
+            </div>
+          </div>
+          <div id="prestamosList" class="list"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-head"><h2>Resumen de préstamos</h2></div>
+          <div id="prestamosResumen" class="list"></div>
+        </div>
+      </div>
+    </section>
+
     <section id="reportesView" class="view">
       <div class="grid grid-2">
         <div class="card">
@@ -295,16 +404,19 @@
   </div>
 
   <script>
-    const STORAGE_KEY = 'control_viaticos_pro_v2';
+    const STORAGE_KEY = 'control_viaticos_pro_v3';
     const defaultData = {
       config: { saldoBase: 0, saldoObjetivo: 0 },
       viajes: [],
+      prestamos: [],
       movimientos: []
     };
     const categorias = {
       personal: ['Comida','Transporte personal','Compras','Servicios','Salud','Otros'],
       empresa: ['Transporte','Hospedaje','Alimentación','Peajes','Materiales','Otros'],
-      reembolso: ['Depósito empresa']
+      reembolso: ['Depósito empresa'],
+      prestamo_entregado: ['Préstamo personal'],
+      cobro_prestamo: ['Cobro de préstamo']
     };
 
     let data = cargarData();
@@ -315,7 +427,9 @@
     function cargarData(){
       try{
         const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : structuredClone(defaultData);
+        const parsed = raw ? JSON.parse(raw) : structuredClone(defaultData);
+        if(!Array.isArray(parsed.prestamos)) parsed.prestamos = [];
+        return parsed;
       }catch{ return structuredClone(defaultData); }
     }
     function guardarData(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
@@ -328,25 +442,34 @@
       document.getElementById('viajeInicio').value = fechaHoy();
       document.getElementById('viajeFin').value = fechaHoy();
       document.getElementById('reporteMes').value = mesActual();
+      document.getElementById('prestamoFecha').value = fechaHoy();
+      document.getElementById('prestamoVencimiento').value = fechaHoy();
+      document.getElementById('cobroFecha').value = fechaHoy();
     }
     function getViaje(id){ return data.viajes.find(v => v.id === id); }
+    function getPrestamo(id){ return (data.prestamos || []).find(p => p.id === id); }
     function getMovimiento(id){ return data.movimientos.find(m => m.id === id); }
 
     function getMetrics(){
       const saldoBase = Number(data.config.saldoBase || 0);
       const saldoObjetivo = Number(data.config.saldoObjetivo || 0);
-      let gastosPersonales = 0, gastosEmpresa = 0, reembolsos = 0, ajustes = 0;
+      let gastosPersonales = 0, gastosEmpresa = 0, reembolsos = 0, ajustes = 0, prestamosEntregados = 0, cobrosPrestamos = 0;
       for(const m of data.movimientos){
         if(m.tipo === 'personal') gastosPersonales += Number(m.monto);
         if(m.tipo === 'empresa') gastosEmpresa += Number(m.monto);
         if(m.tipo === 'reembolso') reembolsos += Number(m.monto);
         if(m.tipo === 'ajuste') ajustes += Number(m.monto);
+        if(m.tipo === 'prestamo_entregado') prestamosEntregados += Number(m.monto);
+        if(m.tipo === 'cobro_prestamo') cobrosPrestamos += Number(m.monto);
       }
       const pendiente = gastosEmpresa - reembolsos;
-      const saldoActual = saldoBase - gastosPersonales - gastosEmpresa + reembolsos + ajustes;
+      const prestadoPendiente = (data.prestamos || []).reduce((acc,p)=> acc + Math.max(0, Number(p.monto || 0) - Number(p.capitalRecuperado || 0)), 0);
+      const interesesGanados = (data.prestamos || []).reduce((acc,p)=> acc + Number(p.interesRecuperado || 0), 0);
+      const saldoActual = saldoBase - gastosPersonales - gastosEmpresa - prestamosEntregados + reembolsos + cobrosPrestamos + ajustes;
       const viajesActivos = data.viajes.filter(v => v.estado === 'activo').length;
+      const prestamosActivos = (data.prestamos || []).filter(p => p.estado !== 'cerrado').length;
       const diferenciaObjetivo = saldoActual - saldoObjetivo;
-      return { saldoBase, saldoObjetivo, saldoActual, gastosPersonales, gastosEmpresa, reembolsos, ajustes, pendiente, viajesActivos, diferenciaObjetivo };
+      return { saldoBase, saldoObjetivo, saldoActual, gastosPersonales, gastosEmpresa, reembolsos, ajustes, pendiente, viajesActivos, diferenciaObjetivo, prestamosEntregados, cobrosPrestamos, prestadoPendiente, interesesGanados, prestamosActivos };
     }
 
     function renderTabs(){
@@ -354,6 +477,7 @@
         {id:'dashboardView',label:'Dashboard'},
         {id:'movimientosView',label:'Movimientos'},
         {id:'viajesView',label:'Viajes'},
+        {id:'prestamosView',label:'Préstamos'},
         {id:'reportesView',label:'Reportes'}
       ];
       const container = document.getElementById('tabs');
@@ -373,6 +497,7 @@
       const items = [
         {title:'Saldo actual',value:money(m.saldoActual),sub:'Tu dinero real disponible ahora'},
         {title:'Pendiente por reembolso',value:money(m.pendiente),sub:'Dinero que aún te debe la empresa'},
+        {title:'Prestado pendiente',value:money(m.prestadoPendiente),sub:`${m.prestamosActivos} préstamo(s) abiertos`},
         {title:'Gastos personales',value:money(m.gastosPersonales),sub:'Acumulado total personal'},
         {title:'Reembolsos recibidos',value:money(m.reembolsos),sub:`${m.viajesActivos} viaje(s) activos`}
       ];
@@ -390,6 +515,8 @@
         ['Monto base', money(m.saldoBase)],
         ['Monto objetivo', money(m.saldoObjetivo)],
         ['Total empresa adelantado por ti', money(m.gastosEmpresa)],
+        ['Total prestado a terceros', money(m.prestamosEntregados)],
+        ['Intereses ganados', money(m.interesesGanados)],
         ['Ajustes manuales', money(m.ajustes)],
         ['Diferencia contra objetivo', `${m.diferenciaObjetivo >= 0 ? '+' : ''}${money(m.diferenciaObjetivo)}`]
       ];
@@ -426,7 +553,7 @@
 
     function actualizarViajeEnFormulario(){
       const tipo = document.getElementById('movTipo').value;
-      document.getElementById('viajeField').classList.toggle('hidden', tipo === 'personal');
+      document.getElementById('viajeField').classList.toggle('hidden', ['personal','prestamo_entregado','cobro_prestamo','ajuste'].includes(tipo));
     }
 
     function guardarConfiguracion(){
@@ -681,7 +808,7 @@
           <div>
             <h4>${m.descripcion}</h4>
             <div class="meta">${m.fecha} · ${m.categoria}</div>
-            ${viaje ? `<div class="meta">Viaje: ${viaje.nombre}</div>` : ''}
+            ${viaje ? `<div class="meta">Viaje: ${viaje.nombre}</div>` : ''}${m.prestamoId && getPrestamo(m.prestamoId) ? `<div class="meta">Préstamo: ${getPrestamo(m.prestamoId).persona}</div>` : ''}
             ${m.nota ? `<div class="meta">Nota: ${m.nota}</div>` : ''}
             <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
               <span class="pill ${m.tipo}">${m.tipo}</span>
@@ -690,7 +817,7 @@
             ${m.comprobante ? `<div style="margin-top:10px;"><img class="thumb" src="${m.comprobante}" alt="Comprobante" /></div>` : ''}
           </div>
           <div style="text-align:right;">
-            <div class="price">${m.tipo === 'reembolso' || m.tipo === 'ajuste' ? '+' : '-'} ${money(m.monto)}</div>
+            <div class="price">${['reembolso','ajuste','cobro_prestamo'].includes(m.tipo) ? '+' : '-'} ${money(m.monto)}</div>
             <div style="margin-top:10px;" class="toolbar">
               <button class="btn btn-light" onclick="cargarMovimientoEnFormulario('${m.id}')">Editar</button>
               <button class="btn btn-danger" onclick="eliminarMovimiento('${m.id}')">Eliminar</button>
@@ -740,6 +867,240 @@
       exportarCSV(`${viaje.nombre.replace(/\s+/g,'_')}_reporte.csv`, rows);
     }
 
+
+    function actualizarPrestamosSelect(){
+      const abiertos = (data.prestamos || []).filter(p => p.estado !== 'cerrado' || Number(p.capitalPendiente || 0) > 0.009);
+      const select = document.getElementById('cobroPrestamoId');
+      select.innerHTML = abiertos.length
+        ? abiertos.map(p=>`<option value="${p.id}">${p.persona} · Pendiente ${money(p.capitalPendiente)}${Number(p.interesEsperado||0) ? ` · Int. esp. ${money(p.interesEsperado)}` : ''}</option>`).join('')
+        : '<option value="">No hay préstamos pendientes</option>';
+    }
+
+    function limpiarFormularioPrestamo(){
+      document.getElementById('prestamoEditId').value = '';
+      document.getElementById('prestamoPersona').value = '';
+      document.getElementById('prestamoMonto').value = '';
+      document.getElementById('prestamoFecha').value = fechaHoy();
+      document.getElementById('prestamoVencimiento').value = fechaHoy();
+      document.getElementById('prestamoInteres').value = '';
+      document.getElementById('prestamoEstado').value = 'pendiente';
+      document.getElementById('prestamoNota').value = '';
+      document.getElementById('prestamoFormTitle').textContent = 'Nuevo préstamo personal';
+      document.getElementById('prestamoGuardarBtn').textContent = 'Guardar préstamo';
+      document.getElementById('prestamoCancelarBtn').classList.add('hidden');
+    }
+
+    function editarPrestamo(id){
+      const prestamo = getPrestamo(id);
+      if(!prestamo) return;
+      document.getElementById('prestamoEditId').value = prestamo.id;
+      document.getElementById('prestamoPersona').value = prestamo.persona || '';
+      document.getElementById('prestamoMonto').value = Number(prestamo.monto || 0);
+      document.getElementById('prestamoFecha').value = prestamo.fecha || fechaHoy();
+      document.getElementById('prestamoVencimiento').value = prestamo.vencimiento || '';
+      document.getElementById('prestamoInteres').value = Number(prestamo.interesEsperado || 0) || '';
+      document.getElementById('prestamoEstado').value = prestamo.estado || 'pendiente';
+      document.getElementById('prestamoNota').value = prestamo.nota || '';
+      document.getElementById('prestamoFormTitle').textContent = 'Editar préstamo personal';
+      document.getElementById('prestamoGuardarBtn').textContent = 'Actualizar préstamo';
+      document.getElementById('prestamoCancelarBtn').classList.remove('hidden');
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    function cancelarEdicionPrestamo(){
+      limpiarFormularioPrestamo();
+    }
+
+    function guardarPrestamo(){
+      const editId = document.getElementById('prestamoEditId').value;
+      const persona = document.getElementById('prestamoPersona').value.trim();
+      const monto = Number(document.getElementById('prestamoMonto').value || 0);
+      const fecha = document.getElementById('prestamoFecha').value;
+      const vencimiento = document.getElementById('prestamoVencimiento').value;
+      const interesEsperado = Number(document.getElementById('prestamoInteres').value || 0);
+      const estado = document.getElementById('prestamoEstado').value;
+      const nota = document.getElementById('prestamoNota').value.trim();
+
+      if(!persona) return alert('Ingresa el nombre de la persona.');
+      if(!monto) return alert('Ingresa el monto prestado.');
+      if(!fecha) return alert('Ingresa la fecha del préstamo.');
+
+      if(editId){
+        const prestamo = getPrestamo(editId);
+        if(!prestamo) return alert('No se encontró el préstamo a editar.');
+        const movPrestamo = data.movimientos.find(m => m.prestamoId === editId && m.tipo === 'prestamo_entregado');
+        const delta = monto - Number(prestamo.monto || 0);
+        prestamo.persona = persona;
+        prestamo.monto = monto;
+        prestamo.fecha = fecha;
+        prestamo.vencimiento = vencimiento;
+        prestamo.interesEsperado = interesEsperado;
+        prestamo.estado = estado;
+        prestamo.nota = nota;
+        prestamo.capitalPendiente = Math.max(0, monto - Number(prestamo.capitalRecuperado || 0));
+        if(prestamo.capitalPendiente <= 0.009) prestamo.estado = 'cerrado';
+        if(movPrestamo){
+          movPrestamo.fecha = fecha;
+          movPrestamo.monto = monto;
+          movPrestamo.descripcion = `Préstamo a ${persona}`;
+          movPrestamo.nota = nota || '';
+        }
+        guardarData();
+        limpiarFormularioPrestamo();
+        render();
+        return alert(`Préstamo actualizado correctamente${delta ? '. El saldo también se recalculó.' : '.'}`);
+      }
+
+      const prestamo = {
+        id: uid(),
+        persona, monto, fecha, vencimiento, interesEsperado, estado, nota,
+        capitalRecuperado: 0, interesRecuperado: 0, capitalPendiente: monto
+      };
+      data.prestamos.unshift(prestamo);
+      data.movimientos.unshift({
+        id: uid(),
+        tipo:'prestamo_entregado',
+        fecha,
+        monto,
+        categoria:'Préstamo personal',
+        descripcion:`Préstamo a ${persona}`,
+        nota: nota || '',
+        viajeId:'',
+        prestamoId: prestamo.id,
+        comprobante:''
+      });
+
+      guardarData();
+      limpiarFormularioPrestamo();
+      render();
+      alert('Préstamo guardado correctamente.');
+    }
+
+    function registrarCobroPrestamo(){
+      const prestamoId = document.getElementById('cobroPrestamoId').value;
+      const fecha = document.getElementById('cobroFecha').value;
+      const montoTotal = Number(document.getElementById('cobroMonto').value || 0);
+      const interes = Number(document.getElementById('cobroInteres').value || 0);
+      const nota = document.getElementById('cobroNota').value.trim();
+
+      const prestamo = getPrestamo(prestamoId);
+      if(!prestamo) return alert('Selecciona un préstamo válido.');
+      if(!fecha) return alert('Ingresa la fecha del cobro.');
+      if(!montoTotal) return alert('Ingresa el monto recibido.');
+      if(interes < 0) return alert('El interés no puede ser negativo.');
+      if(interes > montoTotal) return alert('El interés no puede ser mayor al monto recibido.');
+
+      const capital = montoTotal - interes;
+      prestamo.capitalRecuperado = Number(prestamo.capitalRecuperado || 0) + capital;
+      prestamo.interesRecuperado = Number(prestamo.interesRecuperado || 0) + interes;
+      prestamo.capitalPendiente = Math.max(0, Number(prestamo.monto || 0) - Number(prestamo.capitalRecuperado || 0));
+      if(prestamo.capitalPendiente <= 0.009) prestamo.estado = 'cerrado';
+      else if(Number(prestamo.capitalRecuperado || 0) > 0) prestamo.estado = 'pagando';
+
+      data.movimientos.unshift({
+        id: uid(),
+        tipo:'cobro_prestamo',
+        fecha,
+        monto: montoTotal,
+        categoria:'Cobro de préstamo',
+        descripcion:`Cobro préstamo de ${prestamo.persona}`,
+        nota: `${nota || 'Cobro registrado'}${interes ? ` · Interés: ${money(interes)}` : ''}`,
+        viajeId:'',
+        prestamoId: prestamo.id,
+        comprobante:''
+      });
+
+      guardarData();
+      document.getElementById('cobroFecha').value = fechaHoy();
+      document.getElementById('cobroMonto').value = '';
+      document.getElementById('cobroInteres').value = '';
+      document.getElementById('cobroNota').value = '';
+      render();
+      alert('Cobro registrado correctamente.');
+    }
+
+    function cambiarEstadoPrestamo(id){
+      const prestamo = getPrestamo(id);
+      if(!prestamo) return;
+      const estados = ['pendiente','pagando','cerrado'];
+      prestamo.estado = estados[(estados.indexOf(prestamo.estado)+1)%estados.length];
+      guardarData();
+      render();
+    }
+
+    function eliminarPrestamo(id){
+      const tieneMovs = data.movimientos.some(m => m.prestamoId === id);
+      if(tieneMovs) return alert('No puedes eliminar este préstamo porque ya tiene movimientos asociados.');
+      if(!confirm('¿Eliminar este préstamo?')) return;
+      data.prestamos = data.prestamos.filter(p => p.id !== id);
+      guardarData();
+      render();
+    }
+
+    function renderPrestamos(){
+      const cont = document.getElementById('prestamosList');
+      const resumen = document.getElementById('prestamosResumen');
+      const filtroPersona = (document.getElementById('prestamoFiltroPersona')?.value || '').trim().toLowerCase();
+      const filtroEstado = document.getElementById('prestamoFiltroEstado')?.value || 'todos';
+      const hoy = fechaHoy();
+      let prestamos = [...(data.prestamos || [])];
+
+      prestamos.forEach(p => {
+        p.capitalPendiente = Math.max(0, Number(p.monto || 0) - Number(p.capitalRecuperado || 0));
+      });
+
+      if(filtroPersona) prestamos = prestamos.filter(p => (p.persona || '').toLowerCase().includes(filtroPersona));
+      if(filtroEstado === 'vencidos') prestamos = prestamos.filter(p => p.vencimiento && p.vencimiento < hoy && Number(p.capitalPendiente || 0) > 0.009);
+      else if(filtroEstado !== 'todos') prestamos = prestamos.filter(p => p.estado === filtroEstado);
+
+      if(!prestamos.length){
+        cont.innerHTML = '<div class="empty">No hay préstamos que coincidan con el filtro.</div>';
+      } else {
+        cont.innerHTML = prestamos.map(p => {
+          const vencido = p.vencimiento && p.vencimiento < hoy && Number(p.capitalPendiente || 0) > 0.009;
+          return `
+          <div class="item ${vencido ? 'loan-overdue' : ''}">
+            <div>
+              <h4>${p.persona}</h4>
+              <div class="meta">Prestado: ${money(p.monto)} · Fecha: ${p.fecha}${p.vencimiento ? ` · Vence: ${p.vencimiento}` : ''}</div>
+              <div class="meta">Recuperado capital: ${money(p.capitalRecuperado)} · Interés ganado: ${money(p.interesRecuperado)}</div>
+              ${vencido ? `<div class="meta overdue-text" style="margin-top:6px;">Vencido y aún pendiente por cobrar.</div>` : ''}
+              ${p.nota ? `<div class="meta" style="margin-top:6px;">${p.nota}</div>` : ''}
+              <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+                <span class="pill prestamo">${p.estado}</span>
+                <span class="pill prestamo">Pendiente: ${money(p.capitalPendiente)}</span>
+                ${Number(p.interesEsperado||0) ? `<span class="pill cobro_prestamo">Interés esperado: ${money(p.interesEsperado)}</span>` : ''}
+              </div>
+            </div>
+            <div class="toolbar">
+              <button class="btn btn-light" onclick="editarPrestamo('${p.id}')">Editar</button>
+              <button class="btn btn-light" onclick="cambiarEstadoPrestamo('${p.id}')">Cambiar estado</button>
+              <button class="btn btn-danger" onclick="eliminarPrestamo('${p.id}')">Eliminar</button>
+            </div>
+          </div>
+        `}).join('');
+      }
+
+      const base = data.prestamos || [];
+      const totalPrestado = base.reduce((a,p)=>a+Number(p.monto||0),0);
+      const totalCapitalRec = base.reduce((a,p)=>a+Number(p.capitalRecuperado||0),0);
+      const totalInt = base.reduce((a,p)=>a+Number(p.interesRecuperado||0),0);
+      const pendiente = base.reduce((a,p)=>a+Number(p.capitalPendiente||0),0);
+      const vencidos = base.filter(p => p.vencimiento && p.vencimiento < hoy && Number(p.capitalPendiente||0) > 0.009).length;
+      resumen.innerHTML = [
+        ['Total prestado', money(totalPrestado)],
+        ['Capital recuperado', money(totalCapitalRec)],
+        ['Intereses ganados', money(totalInt)],
+        ['Pendiente por cobrar', money(pendiente)],
+        ['Préstamos vencidos', String(vencidos)]
+      ].map(r => `
+        <div class="item">
+          <div><h4>${r[0]}</h4></div>
+          <div class="price">${r[1]}</div>
+        </div>
+      `).join('');
+    }
+
     function movimientosDelMes(mes){
       return data.movimientos.filter(m => (m.fecha || '').slice(0,7) === mes);
     }
@@ -747,19 +1108,23 @@
     function renderReporteMensual(){
       const mes = document.getElementById('reporteMes').value;
       const movs = movimientosDelMes(mes);
-      let personal = 0, empresa = 0, reembolso = 0, ajuste = 0;
+      let personal = 0, empresa = 0, reembolso = 0, ajuste = 0, prestado = 0, cobradoPrestamos = 0;
       movs.forEach(m=>{
         if(m.tipo === 'personal') personal += Number(m.monto);
         if(m.tipo === 'empresa') empresa += Number(m.monto);
         if(m.tipo === 'reembolso') reembolso += Number(m.monto);
         if(m.tipo === 'ajuste') ajuste += Number(m.monto);
+        if(m.tipo === 'prestamo_entregado') prestado += Number(m.monto);
+        if(m.tipo === 'cobro_prestamo') cobradoPrestamos += Number(m.monto);
       });
       const resumen = [
         ['Gastos personales del mes', money(personal)],
         ['Gastos empresa del mes', money(empresa)],
         ['Reembolsos del mes', money(reembolso)],
+        ['Préstamos entregados del mes', money(prestado)],
+        ['Cobros de préstamos del mes', money(cobradoPrestamos)],
         ['Ajustes del mes', money(ajuste)],
-        ['Pendiente del mes', money(empresa - reembolso)]
+        ['Pendiente empresa del mes', money(empresa - reembolso)]
       ];
       document.getElementById('reporteMensualResumen').innerHTML = resumen.map(r=>`
         <div class="item">
@@ -798,6 +1163,7 @@
         try{
           const parsed = JSON.parse(reader.result);
           if(!parsed.config || !Array.isArray(parsed.viajes) || !Array.isArray(parsed.movimientos)) throw new Error();
+          if(!Array.isArray(parsed.prestamos)) parsed.prestamos = [];
           data = parsed;
           guardarData();
           limpiarFormularioMovimiento();
@@ -848,6 +1214,8 @@
       renderStats();
       renderMovimientos();
       renderViajes();
+      actualizarPrestamosSelect();
+      renderPrestamos();
       renderReporteMensual();
     }
 
