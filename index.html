@@ -555,6 +555,14 @@
       });
     }
 
+    function toggleAccordion(button){
+      const item = button.closest('.accordion-item');
+      if(item){
+        item.classList.toggle('active');
+      }
+    }
+
+
     function renderStats(){
       const m = getMetrics();
       const mes = document.getElementById('dashboardMes')?.value || mesActual();
